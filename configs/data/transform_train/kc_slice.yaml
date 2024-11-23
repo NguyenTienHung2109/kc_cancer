@@ -1,0 +1,23 @@
+_target_: albumentations.Compose
+transforms:
+  - _target_: albumentations.Resize
+    height: ${data.image_size}
+    width: ${data.image_size}
+    always_apply: true
+  - _target_: albumentations.HorizontalFlip
+    p: 0.5
+  # - _target_: albumentations.RandomBrightnessContrast
+  #   p: 0.5
+  # - _target_: albumentations.ColorJitter
+  #   brightness: 0.2
+  #   contrast: 0.2
+  #   saturation: 0.2
+  #   hue: 0.1
+  #   p: 0.5
+  - _target_: albumentations.pytorch.transforms.ToTensorV2
+additional_targets: { "mask": "image" }
+bbox_params:
+  _target_: albumentations.BboxParams
+  format: coco  
+  label_fields:
+    - class_labels

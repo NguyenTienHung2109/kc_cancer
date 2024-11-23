@@ -1,0 +1,75 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=test_classification_resnet
+
+defaults:
+  - override /data: kc_slice.yaml
+  - override /model: segcls/segcls_module.yaml
+  - override /callbacks: segcls.yaml
+  - override /trainer: gpu.yaml
+  - override /logger: wandb.yaml
+
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+task_name: "segcls"
+
+seed: 12345
+
+trainer:
+  max_epochs: 50
+  # strategy:
+  #   _target_: lightning.pytorch.strategies.ddp.DDPStrategy
+  #   find_unused_parameters: True
+
+data:
+  batch_size: 16
+  num_workers: 10
+  image_size: 352
+  train_val_test_meta_file: 
+    - seg_cls_train_meta_info_3.1.csv
+    - seg_cls_val_meta_info_3.1.csv
+    - seg_cls_test_meta_info_3.1.csv
+
+model:
+  net:
+    seg_net:
+      channel: 32
+    cls_loc_net:
+      input_size: 1024
+      hidden_size_list: [256, 64, 16]
+      n_classes: [2, 2]
+    cls_nodule_net:
+      input_size: 1024
+      hidden_size_list: [256, 64, 16]
+      n_classes: ${model.n_classes}
+    additional_pos_bbox: True
+    additional_neg_bbox: True
+    
+  groups: 
+    - dam_do
+    - voi_hoa
+    - chua_mo
+    - duong_vien
+    - tao_hang
+
+  weights_classes: 
+    - null
+    - null
+    - null
+    - null
+    - [1, 100, 10, 10]
+
+  n_classes: [4, 8, 3, 5, 4]
+
+logger:
+  wandb:
+    name: "${now:%Y-%m-%d}_${now:%H-%M-%S}"
+    project: "kc_cancer"
+    tags: ${tags}
+    group: segcls
+    id: null # pass correct id to resume experiment! (if ckpt_path is not null)
+
+ckpt_path: null # simply provide checkpoint path to resume training

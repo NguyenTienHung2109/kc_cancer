@@ -1,6 +1,0 @@
-_target_: src.data.dlib300W_datamodule.DLIB300WDataModule
-data_dir: ${paths.data_dir}
-batch_size: 32 # default is 128
-train_val_test_split: [5_000, 1_000, 666]
-num_workers: 0
-pin_memory: False

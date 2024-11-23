@@ -1,0 +1,7 @@
+_target_: albumentations.Compose
+transforms:
+  - _target_: albumentations.Resize
+    height: ${data.image_size}
+    width: 128
+    always_apply: true
+  - _target_: albumentations.pytorch.transforms.ToTensorV2

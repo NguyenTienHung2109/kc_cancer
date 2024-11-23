@@ -1,0 +1,42 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=segmentation_caranet
+
+defaults:
+  - override /data: kc_cancer.yaml
+  - override /model: segmentation/caranet_module.yaml
+  - override /callbacks: segmentation.yaml
+  - override /trainer: ddp.yaml
+  - override /logger: wandb.yaml
+
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+task_name: "segmentation"
+
+seed: 12345
+
+trainer:
+  max_epochs: 50
+  # gradient_clip_val: 0.5
+  strategy:
+    _target_: lightning.pytorch.strategies.ddp.DDPStrategy
+    find_unused_parameters: True
+
+data:
+  batch_size: 8
+  num_workers: 10
+  image_size: 352
+  images: ["ct"]
+
+logger:
+  wandb:
+    name: "${now:%Y-%m-%d}_${now:%H-%M-%S}"
+    project: "kc_cancer"
+    tags: ${tags}
+    group: segmentation
+    id: null # pass correct id to resume experiment! (if ckpt_path is not null)
+
+ckpt_path: null # simply provide checkpoint path to resume training

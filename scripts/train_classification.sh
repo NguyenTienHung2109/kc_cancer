@@ -1,0 +1,5 @@
+export CUDA_VISIBLE_DEVICES=0
+export HYDRA_FULL_ERROR=1
+export WANDB_API_KEY=ac6fadd5c937cb76a00106a28a5986a73e0cad60
+
+python src/train.py experiment=classification_resnet trainer.devices=1

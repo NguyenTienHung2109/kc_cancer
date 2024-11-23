@@ -1,0 +1,36 @@
+_target_: src.models.segmentation.SegmentationModule
+
+use_ema: false
+
+optimizer:
+  _target_: torch.optim.RMSprop
+  _partial_: true
+  lr: 0.0001
+  weight_decay: 1e-5
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.ExponentialLR
+  _partial_: true
+  gamma: 0.9999
+
+net:
+  _target_: src.models.segmentation.net.UNet
+
+  in_channels: 1 # the channel count of the input
+  out_channels: 1 # the channel count of the output
+  base_channels: 64 # the base channel count for the model
+  block: Residual # type of blocks for each level
+  n_layer_blocks: 1 # number of blocks at each level
+  channel_multipliers: [1, 2, 4] # the multiplicative factors for number of channels for each level
+  drop_rate: 0 # drop out layer
+
+criterion: 
+  _target_: segmentation_models_pytorch.losses.SoftBCEWithLogitsLoss
+
+  # _target_: segmentation_models_pytorch.losses.JaccardLoss
+  # mode: binary
+
+  # _target_: segmentation_models_pytorch.losses.DiceLoss
+  # mode: binary
+
+metrics: ["dice", "iou"]

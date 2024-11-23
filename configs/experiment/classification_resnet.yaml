@@ -1,0 +1,61 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=classification_resnet
+
+defaults:
+  - override /data: nodule.yaml
+  - override /model: classification/resnet_module.yaml
+  - override /callbacks: classification.yaml
+  - override /trainer: gpu.yaml
+  - override /logger: wandb.yaml
+
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+task_name: "classification"
+
+seed: 12345
+
+trainer:
+  max_epochs: 100
+
+data:
+  batch_size: 256
+  num_workers: 10
+  image_size: 128
+  images: ["expand_nodule"]
+
+model:
+  net:
+    num_channels: 1
+    channels: 64
+    architecture: resnet50
+  
+  groups: 
+    - dam_do
+    - voi_hoa
+    - chua_mo
+    - duong_vien
+    - tao_hang
+
+  tasks:
+    - multiclass
+    - multiclass
+    - binary
+    - multilabel
+    - multiclass
+
+  n_labels_or_classes: [4, 8, 1, 4, 4]
+
+
+logger:
+  wandb:
+    name: "${now:%Y-%m-%d}_${now:%H-%M-%S}"
+    project: "kc_cancer"
+    tags: ${tags}
+    group: classification
+    id: null # pass correct id to resume experiment! (if ckpt_path is not null)
+
+ckpt_path: null # simply provide checkpoint path to resume training

@@ -1,0 +1,22 @@
+_target_: src.data.kc_cancer_datamodule.KCCancerDataModule
+
+defaults:
+  - transform_train: kc_cancer.yaml
+  - transform_val: kc_cancer.yaml
+  - _self_
+
+data_dir: ${paths.data_dir}
+# meta_file: null
+# train_val_test_split: [0.8, 0.1, 0.1]
+
+train_val_test_meta_file: 
+  - segmentation_train_meta_info_2.5.csv
+  - segmentation_val_meta_info_2.5.csv
+  - segmentation_test_meta_info_2.5.csv
+
+batch_size: 32
+num_workers: 10
+pin_memory: True
+image_size: 128
+images: ["ct", "lung"]
+cache_data: False
