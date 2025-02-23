@@ -1,0 +1,36 @@
+_target_: src.models.classification.ClassificationModule
+
+use_ema: false
+
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: true
+  lr: 0.001
+  weight_decay: 0.0
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.ExponentialLR
+  _partial_: true
+  gamma: 0.95
+
+net:
+  _target_: src.models.classification.net.ResNet
+  n_labels_or_classes: ${model.n_labels_or_classes}
+  num_channels: 1
+
+groups: 
+  - dam_do
+  - voi_hoa
+  - chua_mo
+  - duong_vien
+  - tao_hang
+
+tasks:
+  - multiclass
+  - multiclass
+  - binary
+  - multilabel
+  - multiclass
+
+n_labels_or_classes: [4, 8, 3, 5, 4]
+weight_loss: [1, 1, 1, 1, 1]

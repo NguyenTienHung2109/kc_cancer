@@ -1,0 +1,3 @@
+_target_: src.models.classification.net.ResNet
+n_labels_or_classes: ${model.n_labels_or_classes}
+num_channels: 1

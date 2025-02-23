@@ -1,0 +1,18 @@
+_target_: albumentations.Compose
+transforms:
+  - _target_: albumentations.Resize
+    height: ${data.image_size}
+    width: ${data.image_size}
+    always_apply: true
+  - _target_: albumentations.HorizontalFlip
+    p: 0.5
+  - _target_: albumentations.ShiftScaleRotate
+    shift_limit: 0.05
+    scale_limit: 0.05
+    rotate_limit: 15
+  # - _target_: albumentations.augmentations.dropout.coarse_dropout.CoarseDropout
+  #   max_holes: 8
+  #   max_height: 18
+  #   max_width: 18
+  - _target_: albumentations.pytorch.transforms.ToTensorV2
+additional_targets: { "mask": "image" }

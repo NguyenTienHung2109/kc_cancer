@@ -238,6 +238,25 @@ def filter(meta_path: str, version: float):
         df.loc[condition, df.columns[4:7]] = [None, -1, 1]
         df.loc[condition, df.columns[9:]] = [-1] * 20
 
+        def is_label_invalid(row):
+            labels = {
+                "dam_do": list(row[9:12]),
+                "voi_hoa": list(row[12:19]),
+                "chua_mo": list(row[19:21]),
+                "duong_vien": list(row[21:25]),
+                "tao_hang": list(row[25:28]),
+            }
+
+            # Kiểm tra nếu bất kỳ nhóm nào chứa toàn 0
+            return any(all(val == 0 for val in label) for label in labels.values())
+
+        # Xác định hàng lỗi
+        condition = df.apply(is_label_invalid, axis=1)
+
+        # Xử lý các hàng lỗi theo yêu cầu
+        df.loc[condition, df.columns[4:7]] = [None, -1, 1]
+        df.loc[condition, df.columns[9:]] = [-1] * 20
+
         # from IPython import embed
         # embed()
 

@@ -100,13 +100,6 @@ def split_data(meta_path: str, task = "segmentation", split_type: Literal["case"
                     train_df.loc[len(train_df)] = row
 
     elif task == "seg_cls":
-        nodule_cls_columns = ["Nhóm 1 - Đậm độ - 1.1 Đặc", "Nhóm 1 - Đậm độ - 1.2 Bán đặc", "Nhóm 1 - Đậm độ - 1.3 Kính mờ", \
-                            "Nhóm 2 - Đậm độ vôi - 2.1 Không có vôi", "Nhóm 2 - Đậm độ vôi - 2.2 Vôi trung tâm", "Nhóm 2 - Đậm độ vôi - 2.3 Vôi dạng lá", "Nhóm 2 - Đậm độ vôi - 2.4 Vôi lan toả", "Nhóm 2 - Đậm độ vôi - 2.5 Vôi dạng bắp", "Nhóm 2 - Đậm độ vôi - 2.6 Vôi lấm tấm", "Nhóm 2 - Đậm độ vôi - 2.7 Vôi lệch tâm", \
-                            "Nhóm 3 - Đậm độ mỡ - 3.1 Không chứa mỡ", "Nhóm 3 - Đậm độ mỡ - 3.2 Có chứa mỡ", \
-                            "Nhóm 4 - Bờ và Đường viền - 4.1 Tròn đều", "Nhóm 4 - Bờ và Đường viền - 4.2 Đa thuỳ", "Nhóm 4 - Bờ và Đường viền - 4.3 Bờ không đều", "Nhóm 4 - Bờ và Đường viền - 4.4 Tua gai", \
-                            "Nhóm 5 - Tạo hang - 5.1 Không có", "Nhóm 5 - Tạo hang - 5.2 Hang lành tính", "Nhóm 5 - Tạo hang - 5.3 Hang ác tính"]
-        bbox_columns = ["left", "top", "width", "height"]
-
         # only for case
         df_groupby = df.groupby("code")
         df_codes = [df_code for _, df_code in df_groupby]
@@ -118,10 +111,10 @@ def split_data(meta_path: str, task = "segmentation", split_type: Literal["case"
 
             for _, group in groups:
                 last_row = group.iloc[-1].copy()
-                last_row.update({col: group[col].tolist() for col in nodule_cls_columns + bbox_columns})
+                last_row.update({col: group[col].tolist() for col in group.columns[9:]})
                 new_df = pd.concat([new_df, last_row.to_frame().T])
     
-            if len(test_df) * 10 < len(df):
+            if df_code["code"].iloc[0] in test_code:
                 test_df = pd.concat([test_df, new_df])
             elif len(val_df) * 10 < len(df):
                 val_df = pd.concat([val_df, new_df])
@@ -130,7 +123,6 @@ def split_data(meta_path: str, task = "segmentation", split_type: Literal["case"
 
     else:
         raise NotImplementedError(f"Not implemented split_data for {task} task")
-
     return train_df, val_df, test_df
 
 if __name__ == "__main__":
@@ -146,24 +138,24 @@ if __name__ == "__main__":
     # task = "classification_nodule"
     # meta_name = f"segmentation_meta_info_{version}.csv"
 
-    task = "segmentation"
+    task = "seg_cls"
     meta_name = f"meta_info_bbox_{version}.csv"
 
     train_df, val_df, test_df = split_data(meta_path=os.path.join(data_dir, f"nhom_benh/{meta_name}"), 
                                             task=task,
                                             split_type=split_type)
-    # train_df_1, val_df_1, test_df_1 = split_data(meta_path=os.path.join(data_dir, f"nhom_chung/{meta_name}"), 
-    #                                             task=task,
-    #                                             split_type=split_type)
+    train_df_1, val_df_1, test_df_1 = split_data(meta_path=os.path.join(data_dir, f"nhom_chung/{meta_name}"), 
+                                                task=task,
+                                                split_type=split_type)
 
-    # train_df = pd.concat([train_df, train_df_1])
+    train_df = pd.concat([train_df, train_df_1])
     train_df.reset_index(inplace=True, drop=True)
     train_df.to_csv(os.path.join(data_dir, f"{task}_train_meta_info_{version}.csv"), index=False)
 
-    # val_df = pd.concat([val_df, val_df_1])
+    val_df = pd.concat([val_df, val_df_1])
     val_df.reset_index(inplace=True,  drop=True)
     val_df.to_csv(os.path.join(data_dir, f"{task}_val_meta_info_{version}.csv"), index=False)
 
-    # test_df = pd.concat([test_df, test_df_1])
+    test_df = pd.concat([test_df, test_df_1])
     test_df.reset_index(inplace=True,  drop=True)
     test_df.to_csv(os.path.join(data_dir, f"{task}_test_meta_info_{version}.csv"), index=False)

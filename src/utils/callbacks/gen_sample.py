@@ -47,8 +47,8 @@ class GenSample(Callback):
 
     @torch.no_grad() 
     def infer(self, pl_module: LightningModule, batch: Any, mode: str):
-        # images, masks, _, _ = batch
-        images, masks = batch
+        images, masks, _ = batch
+        # images, masks = batch
         # avoid out of memory
         n_samples = min(self.grid_shape[0] * self.grid_shape[1], images.shape[0])
 

@@ -1,0 +1,43 @@
+transform_train:
+  _target_: albumentations.Compose
+  transforms:
+  - _target_: albumentations.Resize
+    height: ${data.image_size}
+    width: ${data.image_size}
+    always_apply: true
+  - _target_: albumentations.HorizontalFlip
+    p: 0.5
+  - _target_: albumentations.pytorch.transforms.ToTensorV2
+  additional_targets:
+    mask: image
+  bbox_params:
+    _target_: albumentations.BboxParams
+    format: coco
+    label_fields:
+    - class_labels
+transform_val:
+  _target_: albumentations.Compose
+  transforms:
+  - _target_: albumentations.Resize
+    height: ${data.image_size}
+    width: ${data.image_size}
+    always_apply: true
+  - _target_: albumentations.pytorch.transforms.ToTensorV2
+  additional_targets:
+    mask: image
+  bbox_params:
+    _target_: albumentations.BboxParams
+    format: coco
+    label_fields:
+    - class_labels
+_target_: src.data.KCSliceDataModule
+data_dir: ${paths.data_dir}
+train_val_test_meta_file:
+- seg_cls_train_meta_info_2.5.csv
+- seg_cls_val_meta_info_2.5.csv
+- seg_cls_test_meta_info_2.5.csv
+batch_size: 32
+num_workers: 10
+pin_memory: true
+image_size: 352
+cache_data: false

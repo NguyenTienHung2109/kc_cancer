@@ -45,16 +45,9 @@ def bboxes_intersect(bboxes, bbox):
     return False
 
 def negative_sampling(file_path: str):
-    nodule_cls_columns = ["Nhóm 1 - Đậm độ - 1.1 Đặc", "Nhóm 1 - Đậm độ - 1.2 Bán đặc", "Nhóm 1 - Đậm độ - 1.3 Kính mờ", \
-                            "Nhóm 2 - Đậm độ vôi - 2.1 Không có vôi", "Nhóm 2 - Đậm độ vôi - 2.2 Vôi trung tâm", "Nhóm 2 - Đậm độ vôi - 2.3 Vôi dạng lá", "Nhóm 2 - Đậm độ vôi - 2.4 Vôi lan toả", "Nhóm 2 - Đậm độ vôi - 2.5 Vôi dạng bắp", "Nhóm 2 - Đậm độ vôi - 2.6 Vôi lấm tấm", "Nhóm 2 - Đậm độ vôi - 2.7 Vôi lệch tâm", \
-                            "Nhóm 3 - Đậm độ mỡ - 3.1 Không chứa mỡ", "Nhóm 3 - Đậm độ mỡ - 3.2 Có chứa mỡ", \
-                            "Nhóm 4 - Bờ và Đường viền - 4.1 Tròn đều", "Nhóm 4 - Bờ và Đường viền - 4.2 Đa thuỳ", "Nhóm 4 - Bờ và Đường viền - 4.3 Bờ không đều", "Nhóm 4 - Bờ và Đường viền - 4.4 Tua gai", \
-                            "Nhóm 5 - Tạo hang - 5.1 Không có", "Nhóm 5 - Tạo hang - 5.2 Hang lành tính", "Nhóm 5 - Tạo hang - 5.3 Hang ác tính"]
-    bbox_columns = ["left", "top", "width", "height"]
-
     df = pd.read_csv(file_path)
 
-    for col in nodule_cls_columns + bbox_columns:
+    for col in df.columns[9:]:
         df[col] =  df[col].apply(lambda x: eval(x))
 
     for idx, row in tqdm(df.iterrows(), total=len(df)):
@@ -63,21 +56,34 @@ def negative_sampling(file_path: str):
         pos_bboxes = []
         if not is_clean:
             # multi nodule in image -> merger multi mask
+            lefts = df.loc[idx, "left"]
+            tops = df.loc[idx, "top"]
+            widths = df.loc[idx, "width"]
+            heights = df.loc[idx, "height"]
+
+            # Create a list of indices to remove
+            indices_to_remove = [i for i in range(len(heights)) if lefts[i] == -1]
+            for i in sorted(indices_to_remove, reverse=True):
+                for col in df.columns[9:-4]:
+                    df.loc[idx, col].pop(i)
+                lefts.pop(i)
+                tops.pop(i)
+                widths.pop(i)
+                heights.pop(i)
+
 
             for i in range(len(df["height"][idx])):
                 pos_bboxes.append((df.loc[idx, "left"][i], df.loc[idx, "top"][i], df.loc[idx, "width"][i], df.loc[idx, "height"][i]))
         else:
-            for col in nodule_cls_columns + bbox_columns:
-                df.at[idx, col] = []
-                df.at[idx, col] = []
-                df.at[idx, col] = []
-                df.at[idx, col] = []
+            df.at[idx, "left"] = []
+            df.at[idx, "top"] = []
+            df.at[idx, "width"] = []
+            df.at[idx, "height"] = []
 
         neg_bboxes = []
         min_w, max_w = 20, 128
         for _ in range(3 - len(pos_bboxes)):
             # sampling
-
             while True:
                 w, scale = random.randint(min_w, max_w), random.uniform(0.5, 2)
                 h = int(w * scale)
@@ -97,21 +103,23 @@ def negative_sampling(file_path: str):
             neg_bboxes.append((x, y, w, h))
 
         for bbox in neg_bboxes:
-            for col in nodule_cls_columns:
+            for col in df.columns[9:-4]:
                 df.loc[idx, col].append(-1)
 
             df.loc[idx, "left"].append(bbox[0])
             df.loc[idx, "top"].append(bbox[1])
             df.loc[idx, "width"].append(bbox[2])
             df.loc[idx, "height"].append(bbox[3])
+                
+
 
     df.to_csv(file_path, index=False)
 
 if __name__ == "__main__":
 
-    version = 3.1
+    version = 2.5
     print(f"Data version_{version}")
 
-    negative_sampling(file_path = f"data/kc_cancer_v3/seg_cls_train_meta_info_{version}.csv")
-    negative_sampling(file_path = f"data/kc_cancer_v3/seg_cls_val_meta_info_{version}.csv")
-    negative_sampling(file_path = f"data/kc_cancer_v3/seg_cls_test_meta_info_{version}.csv")
+    negative_sampling(file_path = f"data/kc_cancer/seg_cls_train_meta_info_{version}.csv")
+    negative_sampling(file_path = f"data/kc_cancer/seg_cls_val_meta_info_{version}.csv")
+    negative_sampling(file_path = f"data/kc_cancer/seg_cls_test_meta_info_{version}.csv")

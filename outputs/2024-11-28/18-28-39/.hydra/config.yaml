@@ -1,0 +1,36 @@
+transform_train:
+  _target_: albumentations.Compose
+  transforms:
+  - _target_: albumentations.Resize
+    height: ${data.image_size}
+    width: ${data.image_size}
+    always_apply: true
+  - _target_: albumentations.HorizontalFlip
+    p: 0.5
+  - _target_: albumentations.RandomBrightnessContrast
+    p: 0.5
+  - _target_: albumentations.ShiftScaleRotate
+    shift_limit: 0.05
+    scale_limit: 0.05
+    rotate_limit: 15
+  - _target_: albumentations.pytorch.transforms.ToTensorV2
+transform_val:
+  _target_: albumentations.Compose
+  transforms:
+  - _target_: albumentations.Resize
+    height: ${data.image_size}
+    width: 128
+    always_apply: true
+  - _target_: albumentations.pytorch.transforms.ToTensorV2
+_target_: src.data.NoduleDataModule
+data_dir: ${paths.data_dir}
+train_val_test_meta_file:
+- classification_nodule_train_meta_info_2.5.csv
+- classification_nodule_val_meta_info_2.5.csv
+- classification_nodule_test_meta_info_2.5.csv
+batch_size: 32
+num_workers: 10
+pin_memory: true
+image_size: 128
+images:
+- expand_nodule

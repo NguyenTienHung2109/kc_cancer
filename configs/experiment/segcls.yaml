@@ -19,7 +19,7 @@ task_name: "segcls"
 seed: 12345
 
 trainer:
-  max_epochs: 50
+  max_epochs: 100
   # strategy:
   #   _target_: lightning.pytorch.strategies.ddp.DDPStrategy
   #   find_unused_parameters: True
@@ -29,32 +29,27 @@ data:
   num_workers: 10
   image_size: 352
   train_val_test_meta_file: 
-    - seg_cls_train_meta_info_3.1.csv
-    - seg_cls_val_meta_info_3.1.csv
-    - seg_cls_test_meta_info_3.1.csv
+    - seg_cls_train_meta_info_2.5.csv
+    - seg_cls_val_meta_info_2.5.csv
+    - seg_cls_test_meta_info_2.5.csv
 
 model:
   net:
     seg_net:
       channel: 32
-    cls_loc_net:
-      input_size: 1024
-      hidden_size_list: [256, 64, 16]
-      n_classes: [2, 2]
-    cls_nodule_net:
-      input_size: 1024
+    cls_net:
+      input_size: 32
       hidden_size_list: [256, 64, 16]
       n_classes: ${model.n_classes}
     additional_pos_bbox: True
     additional_neg_bbox: True
-    
+
   groups: 
     - dam_do
     - voi_hoa
     - chua_mo
     - duong_vien
     - tao_hang
-
   weights_classes: 
     - null
     - null

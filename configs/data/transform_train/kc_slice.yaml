@@ -3,6 +3,7 @@ transforms:
   - _target_: albumentations.Resize
     height: ${data.image_size}
     width: ${data.image_size}
+
     always_apply: true
   - _target_: albumentations.HorizontalFlip
     p: 0.5

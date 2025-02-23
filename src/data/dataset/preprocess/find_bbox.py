@@ -18,7 +18,7 @@ def find_bbox(image: np.array):
     bbox = merge_bbox(bboxes, image)
     return bbox
 
-def main(meta_path: str, dataset_dir: str, version: str):
+def main(meta_path: str, dataset_dir: str):
     df = pd.read_csv(meta_path)
 
     bbox_infos = [ [] for _ in range(4)]
@@ -47,11 +47,11 @@ def main(meta_path: str, dataset_dir: str, version: str):
     df["width"] = bbox_infos[2]
     df["height"] = bbox_infos[3]
 
-    df.to_csv(meta_path.replace("meta_info", f"meta_info_bbox_{version}"), index=False)
+    df.to_csv(meta_path.replace("meta_info", "meta_info_bbox"), index=False)
 
 if __name__ == "__main__":
 
     version = 2.5
     print(f"Data version_{version}")
-    # main(f"data/kc_cancer_v3/nhom_chung/meta_info_{version}.csv", dataset_dir="data/kc_cancer")
-    main(f"data/kc_cancer/nhom_benh/meta_info.csv", dataset_dir="data/kc_cancer", version=2.5)
+    main(f"data/kc_cancer/nhom_chung/meta_info_{version}.csv", dataset_dir="data/kc_cancer")
+    main(f"data/kc_cancer/nhom_benh/meta_info_{version}.csv", dataset_dir="data/kc_cancer")

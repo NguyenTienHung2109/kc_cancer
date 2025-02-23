@@ -95,6 +95,7 @@ class CaraNetModule(LightningModule):
         net: torch.nn.Module,
         optimizer: Optimizer,
         scheduler: lr_scheduler,
+        loss_cf: nn.Module,
         # criterion: nn.Module,
         size_rates = [0.75, 1, 1.25],
         image_size:int = 352,
@@ -106,7 +107,7 @@ class CaraNetModule(LightningModule):
         # this line allows to access init params with 'self.hparams' attribute
         # also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
-
+        self.loss_cf = loss_cf
         # CaraNet model
         self.net = net
         print(self.net.resnet.conv1)
@@ -198,7 +199,7 @@ class CaraNetModule(LightningModule):
         pred_map_5, _, _, _ = self.forward(images)
 
         # loss = self.criterion(pred_map_5, gts)
-        loss_fn = IOU_BCE()
+        loss_fn = self.loss_cf
         loss = loss_fn(pred_map_5, gts)
         preds = torch.sigmoid(pred_map_5)
         preds = (preds > 0.5).to(torch.int64)
@@ -240,7 +241,7 @@ class CaraNetModule(LightningModule):
 
             # forward
             pred_map_5, pred_map_3, pred_map_2, pred_map_1 = self.forward(imgs)
-            loss_fn = IOU_BCE()
+            loss_fn = self.loss_cf
             # loss function
             loss5 = loss_fn(pred_map_5, targets)
             loss3 = loss_fn(pred_map_3, targets)

@@ -1,4 +1,4 @@
-_target_: src.data.NoduleDataModule
+_target_: src.data.nodule_dataloader.NoduleDataModule
 
 defaults:
   - transform_train: nodule.yaml
@@ -15,12 +15,12 @@ data_dir: ${paths.data_dir}
 #   - classification_test_meta_info.csv
 
 train_val_test_meta_file: 
-  - classification_nodule_train_meta_info_v5.csv
-  - classification_nodule_val_meta_info_v5.csv
-  - classification_nodule_test_meta_info_v5.csv
+  - classification_nodule_train_meta_info_2.5.csv
+  - classification_nodule_val_meta_info_2.5.csv
+  - classification_nodule_test_meta_info_2.5.csv
 
 batch_size: 32
 num_workers: 10
 pin_memory: True
-image_size: 128
+image_size: 256
 images: ["expand_nodule"]

@@ -1,0 +1,74 @@
+_target_: src.models.segcls.segcls_module.SegClsModule
+net:
+  _target_: src.models.segcls.net.segcls.SegClsNet
+  seg_net:
+    _target_: src.models.segcls.net.caranet.CaraNet
+    slice_encoder:
+      _target_: src.models.segcls.net.encoder.Encoder
+      channel: 32
+      backbone:
+        _target_: src.models.components.pretrain.Res2Net_v1b.res2net101_v1b_26w_4s
+        pretrained: true
+    nodule_decoder:
+      _target_: src.models.segcls.net.decoder.Decoder
+      channel: 32
+    merge_decoder: false
+  matching_threshold: 0.5
+  additional_pos_bbox: false
+  additional_neg_bbox: false
+  scale_bbox: 1.0
+  cls_nodule_net:
+    _target_: src.models.segcls.net.mlp.MLP
+    input_size: 1024
+    hidden_size_list:
+    - 256
+    - 64
+    - 16
+    n_classes:
+    - 4
+    - 8
+    - 3
+    - 5
+    - 4
+    dropout: 0.1
+  cls_lung_pos_net:
+    _target_: src.models.segcls.net.mlp.MLP
+    input_size: 1024
+    hidden_size_list:
+    - 256
+    - 64
+    - 16
+    n_classes:
+    - 2
+    - 2
+    dropout: 0.1
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: true
+  lr: 0.0001
+  weight_decay: 0.0
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  mode: min
+  factor: 0.1
+  patience: 10
+use_ema: false
+size_rates:
+- 0.75
+- 1
+- 1.25
+groups:
+- dam_do
+- voi_hoa
+- chua_mo
+- duong_vien
+- tao_hang
+n_classes:
+- 4
+- 8
+- 3
+- 5
+- 4
+weights_classes: null
+image_size: ${data.image_size}

@@ -1,0 +1,52 @@
+_target_: src.models.segcls.SegClsModule
+use_ema: true
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: true
+  lr: 0.0001
+  weight_decay: 0.0
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  mode: min
+  factor: 0.1
+  patience: 10
+net:
+  _target_: src.models.segcls.net.SegClsNet
+  seg_net:
+    _target_: src.models.segcls.net.CaraNet
+    channel: 32
+  cls_net:
+    _target_: src.models.segcls.net.MLP
+    input_size: 32
+    hidden_size_list:
+    - 16
+    - 8
+    n_classes: ${model.n_classes}
+  matching_threshold: 0.5
+groups:
+- dam_do
+- voi_hoa
+- chua_mo
+- duong_vien
+- tao_hang
+weights_classes:
+- null
+- null
+- null
+- null
+- - 1
+  - 100
+  - 10
+  - 10
+n_classes:
+- 4
+- 8
+- 3
+- 5
+- 4
+image_size: ${data.image_size}
+size_rates:
+- 0.75
+- 1
+- 1.25

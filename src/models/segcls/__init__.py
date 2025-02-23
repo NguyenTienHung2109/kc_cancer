@@ -1,0 +1,1 @@
+from .segcls_module import SegClsModule

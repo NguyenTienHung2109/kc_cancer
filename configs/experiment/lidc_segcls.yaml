@@ -1,0 +1,64 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=test_classification_resnet
+
+defaults:
+  - override /data: lidc.yaml
+  - override /model: lidc_segcls/lidc_segcls.yaml
+  - override /callbacks: lidc_segcls.yaml
+  - override /trainer: gpu.yaml
+  - override /logger: wandb.yaml
+
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+task_name: "lidc_segcls"
+
+seed: 12345
+
+trainer:
+  max_epochs: 100
+  # strategy:
+  #   _target_: lightning.pytorch.strategies.ddp.DDPStrategy
+  #   find_unused_parameters: True
+
+data:
+  batch_size: 16
+  num_workers: 10
+  image_size: 352
+  train_val_test_meta_file: 
+    - train_meta_info_lidc.csv
+    - val_meta_info_lidc.csv
+    - test_meta_info_lidc.csv
+
+model:
+  net:
+    seg_net:
+      channel: 32
+    cls_net:
+      input_size: 32
+      hidden_size_list: [16, 8]
+      n_classes: ${model.n_classes}
+    additional_pos_bbox: True
+    additional_neg_bbox: True
+
+  groups: 
+    - cancer
+    - malignancy
+  weights_classes: 
+    - null
+    - null
+
+  n_classes: [4, 7]
+
+logger:
+  wandb:
+    name: "${now:%Y-%m-%d}_${now:%H-%M-%S}"
+    project: "lidc_seg"
+    tags: ${tags}
+    group: lidc_segcls
+    id: null # pass correct id to resume experiment! (if ckpt_path is not null)
+
+ckpt_path: null # simply provide checkpoint path to resume training

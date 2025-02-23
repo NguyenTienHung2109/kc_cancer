@@ -25,7 +25,7 @@ net:
   drop_rate: 0 # drop out layer
 
 criterion: 
-  _target_: segmentation_models_pytorch.losses.SoftBCEWithLogitsLoss
+  _target_: segmentation_models_pytorch.losses.FocalLoss
 
   # _target_: segmentation_models_pytorch.losses.JaccardLoss
   # mode: binary

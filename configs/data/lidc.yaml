@@ -1,0 +1,21 @@
+_target_: src.data.lidc_dataloader.LIDCDataModule
+
+defaults:
+  - transform_train: lidc.yaml
+  - transform_val: lidc.yaml
+  - _self_
+
+data_dir: ${paths.data_dir}
+# meta_file: null
+# train_val_test_split: [0.8, 0.1, 0.1]
+
+train_val_test_meta_file: 
+  - train_meta_info_lidc.csv
+  - val_meta_info_lidc.csv
+  - test_meta_info_lidc.csv
+
+batch_size: 32
+num_workers: 10
+pin_memory: True
+image_size: 352
+cache_data: False

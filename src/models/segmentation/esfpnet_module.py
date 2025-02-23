@@ -28,6 +28,8 @@ def iou_score(pred, target, smooth=1e-8):
     preds_binary = (pred > 0.5).float()
     
     # Flatten the tensors to simplify calculation
+    if len(preds_binary.shape) == 2:  # Nếu batch chỉ có 1 mẫu, thêm dimension batch
+        preds_binary = preds_binary.unsqueeze(0)
     pred_flat = preds_binary.view(preds_binary.shape[0], -1)
     target_flat = target.view(target.shape[0], -1)
     

@@ -1,4 +1,4 @@
-_target_: src.data.KCSliceDataModule
+_target_: src.data.kc_slice_dataloader.KCSliceDataModule
 
 defaults:
   - transform_train: kc_slice.yaml
@@ -10,9 +10,9 @@ data_dir: ${paths.data_dir}
 # train_val_test_split: [0.8, 0.1, 0.1]
 
 train_val_test_meta_file: 
-  - seg_cls_train_meta_info_3.1.csv
-  - seg_cls_val_meta_info_3.1.csv
-  - seg_cls_test_meta_info_3.1.csv
+  - seg_cls_train_meta_info_2.5.csv
+  - seg_cls_val_meta_info_2.5.csv
+  - seg_cls_test_meta_info_2.5.csv
 
 batch_size: 32
 num_workers: 10

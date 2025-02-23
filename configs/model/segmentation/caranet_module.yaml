@@ -18,5 +18,8 @@ scheduler:
 net:
   _target_: src.models.segmentation.net.CaraNet
 
+loss_cf:
+  _target_: src.models.loss.focal_loss.Focal_Loss
+
 # criterion: 
 #   _target_: src.models.segmentation.losses.IOU_BCE

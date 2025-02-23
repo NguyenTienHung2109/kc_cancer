@@ -4,6 +4,7 @@ import cv2
 import torch
 import torch.nn as nn
 import rootutils
+import wandb
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt
@@ -97,7 +98,11 @@ class SegmentationModel(nn.Module):
         self.net = net
         self.original_size = (512, 512)
         self.segmentation_module.eval()
-        self.segmentation_module.model_ema.copy_to(self.segmentation_module.net)
+        if self.segmentation_module.use_ema:
+            print("Use EMA")
+            self.segmentation_module.model_ema.copy_to(self.segmentation_module.net)
+        else:
+            print("Not use EMA")
 
     def export_onnx(self, filepath: str):
         input_sample = torch.randn((1, 1) + self.input_size)
@@ -276,6 +281,19 @@ def main(segmentation_model: SegmentationModel,
                                                                                         bboxes, 
                                                                                         norm_ct_image, 
                                                                                         threshold, size=crop_size)
+            # log seperatly nodule_image, expand_nodule_image, cropped_nodule_image to wandb
+            # wandb.init(project="kc_cancer", name="image_log_run")
+            # if nodule_image is not None:
+            #     nodule_image_log = np.clip(nodule_image * 255, 0, 255).astype(np.uint8)
+            #     expand_nodule_image_log = np.clip(expand_nodule_image * 255, 0, 255).astype(np.uint8)
+            #     cropped_nodule_image_log = np.clip(cropped_nodule_image * 255, 0, 255).astype(np.uint8)
+
+            #     wandb.log({"nodule_image": wandb.Image(nodule_image_log)})
+            #     wandb.log({"expand_nodule_image": wandb.Image(expand_nodule_image_log)})
+            #     wandb.log({"cropped_nodule_image": wandb.Image(cropped_nodule_image_log)})
+
+            # else:
+            #     print("nodule_image is None, skipping this step.")
 
             if nodule_image is None: continue
             n_pred_nodule_overlap += 1
@@ -304,7 +322,7 @@ def main(segmentation_model: SegmentationModel,
     df["y"] = y
     df["width"] = width
     df["height"] = height
-    df.to_csv(os.path.join(data_dir, meta_file.split('/')[0], f"segmentation_meta_info_{version}.csv"))
+    df.to_csv(os.path.join(data_dir, meta_file.split('/')[0], f"segmentation_meta_info_{version}_no_ema.csv"))
 
 def export_onnx(model: nn.Module, filepath: str):
     print('-' * 10, "Start export onnx", '-' * 10)
@@ -330,14 +348,15 @@ if __name__ == "__main__":
     version = "2.5"
 
     net = "unet"
-    checkpoint = "logs/segmentation/runs/2024-09-06_01-10-35/checkpoints/epoch_099.ckpt"
+    checkpoint = "logs/segmentation/runs/2024-11-23_18-29-13/checkpoints/epoch_098.ckpt"
 
-    net = "caranet"
-    checkpoint = "logs/segmentation/runs/2024-11-21_18-37-59/checkpoints/epoch_047.ckpt"
+    # net = "caranet"
+    # checkpoint = "logs/segmentation/runs/2024-11-23_17-43-56/checkpoints/epoch_048.ckpt"
 
     segmentation_model = SegmentationModel(checkpoint, net)
-    segmentation_model.export_onnx(filepath=f"logs/segmentation/{version}/{net}.onnx")
+    #segmentation_model.export_onnx(filepath=f"logs/segmentation/{version}/{net}_use_ema.onnx")
     # export_onnx(model=segmentation_model, filepath=f"logs/{version}/{net}.onnx")
+
 
     main(segmentation_model,
         data_dir="data/kc_cancer",

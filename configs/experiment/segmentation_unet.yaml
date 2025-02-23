@@ -34,9 +34,9 @@ model:
     base_channels: 64
     channel_multipliers: [1, 1, 2, 4]
   criterion:
-    smooth_factor: 0.1
-    # _target_: segmentation_models_pytorch.losses.FocalLoss
-    # mode: binary
+    #smooth_factor: 0.1
+    _target_: segmentation_models_pytorch.losses.FocalLoss
+    mode: binary
 
 logger:
   wandb:
