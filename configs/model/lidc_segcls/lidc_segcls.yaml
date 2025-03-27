@@ -22,7 +22,7 @@ net:
     channel: 32
 
   cls_net:
-    _target_: src.models.lidc_segcls.net.MLP
+    _target_: src.models.lidc_segcls.net.resnet_cls.ResNet1D
     input_size: 32
     hidden_size_list: [16, 8]
     n_classes: ${model.n_classes}

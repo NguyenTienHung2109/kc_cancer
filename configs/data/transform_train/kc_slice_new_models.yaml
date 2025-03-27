@@ -1,0 +1,36 @@
+_target_: albumentations.Compose
+transforms:
+  - _target_: albumentations.Resize
+    height: ${data.image_size}
+    width: ${data.image_size}
+    always_apply: true
+  - _target_: albumentations.HorizontalFlip
+    p: 0.5
+  - _target_: albumentations.RandomBrightnessContrast
+    p: 0.5
+  - _target_: albumentations.ElasticTransform
+    alpha: 1
+    sigma: 50 
+    p: 0.5
+  - _target_: albumentations.GaussianBlur
+    p: 0.5
+  - _target_: albumentations.CoarseDropout
+    max_holes: 3
+    max_height: 8
+    max_width: 8
+    p: 0.5
+  - _target_: albumentations.pytorch.transforms.ToTensorV2
+
+bbox_params:
+  _target_: albumentations.BboxParams
+  format: coco
+  label_fields:
+    - class_labels
+
+additional_targets: {"lung_loc": "image"}
+
+  # - _target_: albumentations.ShiftScaleRotate
+  #   shift_limit: 0.1
+  #   scale_limit: 0.1
+  #   rotate_limit: 5
+  #   p: 0.5
