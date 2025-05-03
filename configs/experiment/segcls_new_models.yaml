@@ -1,0 +1,95 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=seg_nodule_lung_loc_cls_nodule_lung_pos_lung_damage
+
+defaults:
+  - override /data: kc_slice_new_models.yaml
+  - override /model: segcls/segcls_module_new_models.yaml
+  - override /callbacks: segcls.yaml
+  - override /trainer: ddp.yaml
+  - override /logger: wandb.yaml
+
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+task_name: "segcls"
+
+seed: 12345
+
+trainer:
+  max_epochs: 50
+  strategy:
+    _target_: lightning.pytorch.strategies.ddp.DDPStrategy
+    find_unused_parameters: True
+
+data:
+  data_dir: ${paths.data_dir}/kc_cancer_4.4
+  batch_size: 8
+  num_workers: 10
+  image_size: 352
+  use_nodule_cls: True
+  use_lung_pos: True
+  use_lung_damage_cls: True
+  use_lung_loc: True
+  train_val_test_meta_file: 
+  - train_meta_info_filter.csv
+  - val_meta_info_filter.csv
+  - test_meta_info_filter.csv
+
+model:
+  net:
+    seg_net:
+      slice_encoder:
+        channel: 112
+      nodule_decoder:
+        out_channel: 7
+    
+    matching_threshold: 0.5
+    additional_pos_bbox: True
+    additional_neg_bbox: True
+    scale_bbox: 1.5
+    cls_nodule_net:
+      input_size: 1024
+      hidden_size_list: [256, 64, 16]
+      dropout: 0.1
+    
+    cls_lung_pos_net:
+      input_size: 1024
+      hidden_size_list: [256, 64, 16]
+      n_classes: [2, 2]
+      dropout: 0.1
+  
+  use_ema: False
+
+  ############### Classification Nodule ###############
+  use_nodule_cls: True
+  nodule_cls_groups:
+    - dong_dac
+    - kinh_mo
+    - phe_quan_do
+    - nu_tren_canh
+    - dam_do
+    - voi_hoa
+    - chua_mo
+    - duong_vien
+    - tao_hang
+    - di_can
+  nodule_cls_classes: [3, 3, 3, 3, 5, 3, 3, 5, 4, 4]
+  nodule_cls_weights: null
+
+  ############### Classification Lung Position ###############
+  lung_pos_groups:
+    - right_lung
+    - left_lung
+
+logger:
+  wandb:
+    name: "${now:%Y-%m-%d}_${now:%H-%M-%S}"
+    project: "kc_cancer"
+    tags: ${tags}
+    group: segcls
+    id: null # pass correct id to resume experiment! (if ckpt_path is not null)
+
+ckpt_path: null # simply provide checkpoint path to resume training

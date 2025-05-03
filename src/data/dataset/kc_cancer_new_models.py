@@ -255,7 +255,7 @@ class KCSliceDataset(Dataset):
 if __name__ == "__main__":
     version = 4.3
     use_nodule_cls = True
-    use_lung_loc = True
+    use_lung_loc = False
     use_lung_pos = True
     use_lung_damage_cls = True
 

@@ -1,13 +1,25 @@
 from typing import Any, Tuple, List, Dict
-import cv2
-import numpy as np
+
 import torch
 from torch import Tensor
 from lightning import LightningModule, Trainer
 from torchvision.utils import make_grid
 from lightning.pytorch.callbacks import Callback
 
+from src.models.seg import CaraNetModule, UNetModule
+from src.models.segcls import SegClsModule
 
+def draw_masks(masks_batch):
+    # masks: (w, h, c)
+    colors = torch.tensor([(0, 0, 0), (0.5, 0.75, 1.0), (0.0, 0.5, 0.75), 
+                            (0.0, 0.0, 1.0), (1.0, 0.75, 0.5), (1.0, 0.5, 0.0)], 
+                        dtype=torch.float32, device=masks_batch.device)
+    b, c, w, h = masks_batch.shape
+    colored_masks = torch.zeros((b, 3, w, h), dtype=torch.float32, device=masks_batch.device)
+    for i in range(c):
+        mask = masks_batch[:, i:i+1, :, :]  # (b, 1, w, h)
+        colored_masks += mask * colors[i].view(1, 3, 1, 1) 
+    return colored_masks
 
 class GenSample(Callback):
 
@@ -27,7 +39,7 @@ class GenSample(Callback):
 
     # train
     def on_train_batch_end(self, trainer: Trainer, pl_module: LightningModule,
-                           outputs: Any, batch: Any, batch_idx: int) -> None:
+                        outputs: Any, batch: Any, batch_idx: int) -> None:
         if batch_idx == 0:
             self.infer(pl_module, batch, mode="train")
 
@@ -47,76 +59,45 @@ class GenSample(Callback):
 
     @torch.no_grad() 
     def infer(self, pl_module: LightningModule, batch: Any, mode: str):
-        images, masks, _ = batch
-        # images, masks = batch
+        slices, nodule_masks = batch["slice"], batch["seg_nodule"]
+
         # avoid out of memory
-        n_samples = min(self.grid_shape[0] * self.grid_shape[1], images.shape[0])
+        n_samples = min(self.grid_shape[0] * self.grid_shape[1], slices.shape[0])
 
-        images = images[:n_samples]
-        masks = masks[:n_samples]
+        slices = slices[:n_samples]
+        nodule_masks = nodule_masks[:n_samples]
 
-        with pl_module.ema_scope():
-            preds = pl_module.predict(images)
-            def draw_contour(images, mask, pred):
-                """
-                Vẽ contour của pred (màu đỏ) và mask (màu xanh) lên ảnh gốc.
+        if isinstance(pl_module, (CaraNetModule, UNetModule)):
+            with pl_module.ema_scope():
+                nodule_preds = pl_module.predict(slices)
 
-                Args:
-                    images (torch.Tensor): Ảnh gốc dạng Tensor, kích thước (B, 1, H, W).
-                    mask (torch.Tensor): Mask gốc dạng Tensor, kích thước (B, 1, H, W).
-                    pred (torch.Tensor): Mask dự đoán dạng Tensor, kích thước (B, 1, H, W).
+                self.log_sample([slices, nodule_masks, nodule_preds],
+                                pl_module=pl_module,
+                                nrow=self.grid_shape[0],
+                                mode=mode,
+                                caption=['image', 'mask', 'pred'])
 
-                Returns:
-                    list of numpy arrays: Danh sách ảnh với contour đã được vẽ.
-                """
-                result_images = []
+        elif isinstance(pl_module, SegClsModule):
+            if pl_module.use_lung_loc:
+                lung_loc_masks = batch["seg_lung_loc"][:n_samples]
 
-                # Đảm bảo đầu vào là tensor
-                if not (torch.is_tensor(images) and torch.is_tensor(mask) and torch.is_tensor(pred)):
-                    raise ValueError("images, mask, and pred must be PyTorch tensors.")
+            with pl_module.ema_scope():
+                out = pl_module.predict(slices)
+                nodule_preds = out["seg_nodule"]
 
-                # Chuyển đổi tensor về NumPy
-                images = images.cpu().numpy()  # (B, 1, H, W)
-                mask = mask.cpu().numpy()      # (B, 1, H, W)
-                pred = pred.cpu().numpy()      # (B, 1, H, W)
+                images = [slices, nodule_masks, nodule_preds]
+                caption = ['image', 'nodule_mask', 'nodule_pred']
 
-                # Duyệt qua từng ảnh trong batch
-                for i in range(images.shape[0]):
-                    # Lấy ảnh, mask, và predict tương ứng
-                    img = images[i, 0]  # (H, W)
-                    msk = mask[i, 0]    # (H, W)
-                    prd = pred[i, 0]    # (H, W)
+                if pl_module.use_lung_loc:
+                    lung_loc_preds = out["seg_lung_loc"]
+                    images += [draw_masks(lung_loc_masks), draw_masks(lung_loc_preds)]
+                    caption += ["lung_loc_mask", "lung_loc_pred"]
 
-                    # Đảm bảo mask và pred là nhị phân (0 hoặc 255) và kiểu uint8
-                    msk = ((msk > 0.5) * 255).astype(np.uint8)  # Chuyển nhị phân và nhân lên 255
-                    prd = ((prd > 0.5) * 255).astype(np.uint8)
-
-                    # Chuyển ảnh về định dạng BGR để OpenCV có thể hiển thị
-                    img_bgr = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_GRAY2BGR)
-
-                    # Tìm contour của mask và predict
-                    contours_mask, _ = cv2.findContours(msk, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                    contours_pred, _ = cv2.findContours(prd, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-                    # Vẽ contour lên ảnh
-                    img_with_contours = img_bgr.copy()
-                    cv2.drawContours(img_with_contours, contours_mask, -1, (0, 0, 255), 2)  # Màu đỏ cho mask
-                    cv2.drawContours(img_with_contours, contours_pred, -1, (255, 0, 0), 2)  # Màu xanh cho predict
-
-                    # Thêm ảnh đã vẽ vào danh sách kết quả
-                    result_images.append(img_with_contours)
-                    
-                result_images_tensor = torch.tensor(np.stack(result_images)).permute(0, 3, 1, 2)  # (B, H, W, C) -> (B, C, H, W)
-    
-                return result_images_tensor
-            
-            images_with_contours = draw_contour(images, masks, preds)   
-            
-            self.log_sample([images_with_contours, masks, preds],
-                            pl_module=pl_module,
-                            nrow=self.grid_shape[0],
-                            mode=mode,
-                            caption=['image', 'mask', 'pred'])
+                self.log_sample(images,
+                                pl_module=pl_module,
+                                nrow=self.grid_shape[0],
+                                mode=mode,
+                                caption=caption)
 
     def log_sample(self,
                     images: Tensor,

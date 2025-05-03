@@ -5,7 +5,7 @@ defaults:
   - transform_val: kc_slice_new_models.yaml
   - _self_
 
-data_dir: ${paths.data_dir}/kc_cancer_4.3
+data_dir: ${paths.data_dir}/kc_cancer_4.4
 use_nodule_cls: False
 use_lung_pos: False
 use_lung_loc: False

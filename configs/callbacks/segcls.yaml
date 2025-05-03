@@ -9,7 +9,8 @@ defaults:
 model_checkpoint:
   dirpath: ${paths.output_dir}/checkpoints
   filename: "epoch_{epoch:03d}"
-  monitor: "val/dice"
+  # monitor: "val/dice"
+  monitor: "val/dice/seg_nodule"
   mode: "max"
   save_last: True
   auto_insert_metric_name: False

@@ -392,7 +392,7 @@ if __name__ == "__main__":
         cfg["data_dir"] = f"{root}/data/kc_cancer_{version}"
         cfg["use_nodule_cls"] = True
         cfg["use_lung_pos"] = True
-        cfg["use_lung_loc"] = True
+        cfg["use_lung_loc"] = False
         cfg["use_lung_damage_cls"] = True
         
         cfg["transform_train"]["transforms"][0].height = h
@@ -412,7 +412,8 @@ if __name__ == "__main__":
         for i, batch in enumerate(train_dataloader):
             print("~" * 50)
             print("batch:", i)
-            break
+            if i == 3:
+                break
 
         slices, slice_info = batch["slice"], batch["slice_info"]
         nodule_masks = batch["seg_nodule"]
@@ -438,46 +439,52 @@ if __name__ == "__main__":
         if cfg["use_lung_loc"]:
             col_titles.append("Lung Location Mask")
         
-        n_row , n_col= 3, len(col_titles)
+        n_row , n_col = 3, len(col_titles)
         _, axes = plt.subplots(n_row, n_col, figsize=(15, 10))
         for i, title in enumerate(col_titles):
             axes[0, i].set_title(title, weight='bold')
 
-        for i in range(n_row):
+        cnt = 0
+        for i in range(len(slices)):
+            nodule_mask = nodule_masks[i][0]
+            if nodule_mask.sum() == 0:
+                continue
+
+            if cnt == n_row:
+                break  # 💡 dừng lại trước khi vượt quá index
+
             slice = slices[i, 0]
             slice = torch.stack([slice, slice, slice], dim=-1).numpy()
-            
-            nodule_mask = nodule_masks[i][0]
-            if nodule_mask.sum() > 0:
-                nodule_contours, _ = cv2.findContours(np.array(nodule_mask, dtype=np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                cv2.drawContours(slice, nodule_contours, -1, colors["nodule"], 1)
-            
+
+            # Vẽ contour
+            nodule_contours, _ = cv2.findContours(np.array(nodule_mask, dtype=np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(slice, nodule_contours, -1, colors["nodule"], 1)
+
+            # Vẽ bbox
             nodule_mask = torch.stack([nodule_mask, nodule_mask, nodule_mask], dim=-1).numpy()
             if cfg["use_nodule_cls"] or cfg["use_lung_damage_cls"]:
                 bboxes = nodule_infos["bbox"][i]
                 for bbox in bboxes:
                     bbox = [int(x) for x in bbox]
-                    cv2.rectangle(slice, (bbox[0], bbox[1]),
-                                    (bbox[0] + bbox[2], bbox[1] + bbox[3]), 
-                                    colors["bbox"], 1)
-                    cv2.rectangle(nodule_mask, (bbox[0], bbox[1]),
-                                    (bbox[0] + bbox[2], bbox[1] + bbox[3]), 
-                                    colors["bbox"], 1)
+                    cv2.rectangle(slice, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), colors["bbox"], 1)
+                    cv2.rectangle(nodule_mask, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), colors["bbox"], 1)
 
-            axes[i][1].imshow(nodule_mask, cmap="gray")
-            axes[i][1].axis("off")
-            
+            # Hiển thị ảnh
+            axes[cnt][1].imshow(nodule_mask, cmap="gray")
+            axes[cnt][1].axis("off")
+
             if cfg["use_lung_loc"]:
                 lung_loc_mask = np.array(lung_loc_masks[i], dtype=np.uint8).transpose(1, 2, 0)
                 slice, colored_mask = draw_masks(slice, masks=lung_loc_mask, colors=colors["lung_loc"])
-                axes[i][2].imshow(colored_mask)
-                axes[i][2].axis("off")
-            
-            axes[i, 0].text(-0.75, 0.5, slice_info[i], weight='bold', transform=axes[i, 0].transAxes)
-            axes[i][0].imshow(slice)
-            axes[i][0].axis("off")
-        
-        # plt.show()
+                axes[cnt][2].imshow(colored_mask)
+                axes[cnt][2].axis("off")
+
+            axes[cnt, 0].text(-0.75, 0.5, slice_info[i], weight='bold', transform=axes[cnt, 0].transAxes)
+            axes[cnt][0].imshow(slice)
+            axes[cnt][0].axis("off")
+
+            cnt += 1 
+
         plt.savefig("dataloader.png")
 
     main()

@@ -1,0 +1,83 @@
+_target_: src.models.segcls.segcls_module_new_models.SegClsModule
+net:
+  _target_: src.models.segcls.new_net.SegClsNet
+  seg_net:
+    _target_: src.models.segcls.new_net.CaraNet
+    encoder:
+      _target_: src.models.segcls.new_net.Encoder
+      channel: 32
+      backbone:
+        _target_: src.models.components.pretrain.Res2Net_v1b.res2net101_v1b_26w_4s
+        pretrained: true
+    decoder:
+      _target_: src.models.segcls.new_net.Decoder
+      channel: ${model.net.seg_net.encoder.channel}
+      out_channel: 1
+    use_lung_loc: ${data.use_lung_loc}
+  use_nodule_cls: ${data.use_nodule_cls}
+  matching_threshold: 0.5
+  additional_pos_bbox: false
+  additional_neg_bbox: false
+  scale_bbox: 1.0
+  cls_nodule_net:
+    _target_: src.models.segcls.new_net.MLP
+    input_size: 1024
+    hidden_size_list:
+    - 256
+    - 64
+    - 16
+    n_classes: ${model.nodule_cls_classes}
+    dropout: 0.1
+  use_lung_pos: ${data.use_lung_pos}
+  cls_lung_pos_net:
+    _target_: src.models.segcls.net.MLP
+    input_size: 1024
+    hidden_size_list:
+    - 256
+    - 64
+    - 16
+    n_classes:
+    - 2
+    - 2
+    dropout: 0.1
+  use_lung_loc: ${data.use_lung_loc}
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: true
+  lr: 0.0001
+  weight_decay: 0.0
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  mode: min
+  factor: 0.1
+  patience: 10
+use_ema: false
+size_rates:
+- 0.75
+- 1
+- 1.25
+seg_nodule_loss_func:
+  _target_: src.models.loss.StructureLoss
+use_nodule_cls: ${data.use_nodule_cls}
+nodule_cls_groups:
+- dam_do
+- voi_hoa
+- chua_mo
+- duong_vien
+- tao_hang
+nodule_cls_classes:
+- 4
+- 8
+- 3
+- 5
+- 4
+nodule_cls_weights: null
+use_lung_pos: ${data.use_lung_pos}
+lung_pos_groups:
+- right_lung
+- left_lung
+lung_pos_weights: null
+use_lung_loc: ${data.use_lung_loc}
+seg_lung_loc_loss_func:
+  _target_: src.models.loss.MulticlassStructureLoss
